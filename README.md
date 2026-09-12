@@ -29,8 +29,9 @@ and the comment it names is
 The repository has one comment on it, not one per run: the second run edited the
 first comment instead of adding another.
 
-Built as a solution to
-[Coding Challenge #131 — Code Review Agent](https://codingchallenges.fyi/challenges/challenge-github-pr-review-agent/).
+Built from a project brief for an automated GitHub pull request review agent: the
+deterministic tools and the model each do the part they are good at, and the
+result is one comment that is rewritten rather than repeated.
 
 ## What makes it different from a prompt wrapper
 
