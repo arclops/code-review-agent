@@ -257,7 +257,19 @@ internal/notify             the failure notification
 
 ## Notes from building it
 
-Five things were learned the hard way and are worth writing down.
+Six things were learned the hard way and are worth writing down.
+
+**gofmt and `go vet` are not the same program in every Go release.** The first
+run of the workflow failed the formatting check: gofmt 1.22 indents a multi-line
+composite literal inside a `return` differently from gofmt 1.23+, so a file
+formatted with the newer toolchain was rejected by the older one. The construct
+was rewritten so both agree, and CI now runs the test suite on the newest Go as
+well as on the declared minimum — because the same drift showed up in `go vet`,
+which on Windows reports a diagnostic as `.\main.go:6:2` in Go 1.22 and
+`main.go:6:14` in later releases. That difference was hiding a real bug: the
+path normaliser trimmed the leading `./` before converting backslashes, so a
+Windows tool's path became `./main.go`, matched nothing in the pull request, and
+every finding from that linter was silently dropped.
 
 **A tool that scans for credentials cannot contain credential-shaped strings.**
 The first push of this repository was refused by GitHub's push protection,

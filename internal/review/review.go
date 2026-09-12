@@ -526,10 +526,15 @@ func matchPattern(pattern, file string) bool {
 }
 
 // normalizePath turns a path a tool printed into a repository relative one.
+//
+// The separators are converted before the leading "./" is trimmed, because a
+// Windows tool prints ".\app\main.go": trimming first would leave "./main.go",
+// which matches nothing in the pull request, and every finding would be
+// silently dropped.
 func normalizePath(file, root string) string {
 	file = strings.TrimSpace(file)
-	file = strings.TrimPrefix(file, "./")
 	file = strings.ReplaceAll(file, "\\", "/")
+	file = strings.TrimPrefix(file, "./")
 	if root != "" {
 		trimmed := strings.TrimSuffix(strings.ReplaceAll(root, "\\", "/"), "/")
 		file = strings.TrimPrefix(file, trimmed+"/")

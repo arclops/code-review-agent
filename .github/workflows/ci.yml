@@ -75,3 +75,35 @@ jobs:
           name: code-review-agent-${{ matrix.os }}
           path: code-review-agent*
           if-no-files-found: error
+
+  # The matrix above runs the Go version the module declares. This job runs the
+  # newest one, because gofmt and go vet do change between releases: the first
+  # run of this workflow failed here, and the cause was gofmt 1.22 indenting a
+  # construct differently from gofmt 1.23+.
+  latest:
+    name: test (newest Go)
+    runs-on: ubuntu-latest
+    env:
+      CGO_ENABLED: "0"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache-dependency-path: go.mod
+
+      - name: Check formatting
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "These files are not gofmt'd:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./... -count=1 -timeout 10m

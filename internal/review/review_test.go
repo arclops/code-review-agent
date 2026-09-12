@@ -132,13 +132,17 @@ func (p *fakeProvider) Review(_ context.Context, request model.Request) (model.R
 	if err != nil {
 		return model.Review{}, model.Usage{}, err
 	}
-	return model.Review{
+	// Both values are named rather than returned inline: gofmt indents a
+	// multi-line composite literal in a return statement differently in Go 1.22
+	// and Go 1.23+, and a repository whose CI formats with one of them and whose
+	// contributors format with the other fails its own formatting check.
+	review := model.Review{
 		Summary: summary,
 		Issues:  issues,
 		Verdict: verdict,
-	}, model.Usage{
-		Model: "fake-model", PromptTokens: 100, CompletionTokens: 20,
-	}, nil
+	}
+	usage := model.Usage{Model: "fake-model", PromptTokens: 100, CompletionTokens: 20}
+	return review, usage, nil
 }
 
 func (p *fakeProvider) requestFor(file string) (model.Request, bool) {
@@ -851,6 +855,7 @@ func TestNormalizePathTurnsToolOutputIntoRepositoryPaths(t *testing.T) {
 		file, root, want string
 	}{
 		{"./main.go", "/tmp/checkout", "main.go"},
+		{`.\main.go`, "/tmp/checkout", "main.go"},
 		{"/tmp/checkout/pkg/a.go", "/tmp/checkout", "pkg/a.go"},
 		{"pkg\\a.go", "C:\\work\\checkout", "pkg/a.go"},
 		{"pkg/a.go", "", "pkg/a.go"},
