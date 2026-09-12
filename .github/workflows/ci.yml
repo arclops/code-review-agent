@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    env:
+      # Nothing here uses cgo: the service is pure Go, and building with it off
+      # keeps the binary static and takes the C toolchain out of the picture.
+      CGO_ENABLED: "0"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          # There is no go.sum: this module has no dependencies.
+          cache-dependency-path: go.mod
+
+      - name: Check formatting
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "These files are not gofmt'd:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./... -count=1 -timeout 10m
+
+      # Two tests in this module run the real go and gofmt binaries over a
+      # checked out fixture, which is where the linter integration is proven.
+      - name: Test with the race detector
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          CGO_ENABLED: "1"
+        run: go test ./... -count=1 -race -timeout 10m
+
+      - name: Build
+        shell: bash
+        run: |
+          suffix=""
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then suffix=".exe"; fi
+          go build -trimpath -ldflags "-s -w" -o "code-review-agent${suffix}" .
+
+      - name: Smoke test the binary
+        shell: bash
+        run: |
+          suffix=""
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then suffix=".exe"; fi
+          ./code-review-agent${suffix} version
+          ./code-review-agent${suffix} --help
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-review-agent-${{ matrix.os }}
+          path: code-review-agent*
+          if-no-files-found: error

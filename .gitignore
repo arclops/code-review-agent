@@ -1,0 +1,11 @@
+# Build output
+/code-review-agent
+/code-review-agent.exe
+
+# Test and build caches kept beside the checkout
+/.gocache/
+/.gotmp/
+
+# Local configuration, which is where a token or a URL would be written by mistake
+review.local.json
+.env

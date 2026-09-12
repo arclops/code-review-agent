@@ -1,0 +1,90 @@
+{
+  "guidelines": [
+    "Prefer clarity over cleverness; if a reviewer has to read a line twice, rewrite it.",
+    "Handle every error; never discard one silently.",
+    "Do not commit credentials, tokens or keys; read them from the environment.",
+    "Keep functions short enough to read on one screen.",
+    "Give every function and module a short comment saying what it is for.",
+    "Name things for what they mean, not for how they are implemented."
+  ],
+
+  "model": {
+    "provider": "openai",
+    "base_url": "https://api.deepseek.com/v1",
+    "name": "deepseek-chat",
+    "api_key_env": "DEEPSEEK_API_KEY",
+    "timeout_seconds": 60,
+    "max_output_tokens": 1500
+  },
+
+  "lint": {
+    "secret_scan": true,
+    "commands": [
+      {
+        "name": "go-vet",
+        "command": ["go", "vet", "./..."],
+        "format": "go-vet",
+        "stream": "stderr"
+      },
+      {
+        "name": "gofmt",
+        "command": ["gofmt", "-l", "."],
+        "format": "gofmt-list"
+      },
+      {
+        "name": "ruff",
+        "command": ["ruff", "check", "--output-format", "json", "."],
+        "format": "ruff-json"
+      },
+      {
+        "name": "eslint",
+        "command": ["npx", "--no-install", "eslint", "--format", "json", "."],
+        "format": "eslint-json"
+      }
+    ],
+    "severity": {
+      "SECRET": "CRITICAL",
+      "S": "CRITICAL",
+      "F": "MAJOR",
+      "E": "MINOR",
+      "W": "MINOR",
+      "vet-printf": "MAJOR",
+      "vet-lostcancel": "MAJOR",
+      "gofmt": "MINOR"
+    }
+  },
+
+  "filters": {
+    "skip_patterns": [
+      "*.lock", "*.lock.json", "*.sum", "package-lock.json", "yarn.lock", "uv.lock",
+      "vendor/*", "node_modules/*", "dist/*", "build/*", "third_party/*",
+      "*.min.js", "*.min.css", "*.pb.go", "*_generated.go", "*.snap"
+    ],
+    "max_files": 200,
+    "max_patch_bytes": 40000,
+    "include_deleted": false
+  },
+
+  "limits": {
+    "max_concurrent_runs": 4,
+    "per_file_concurrency": 4,
+    "run_timeout_seconds": 300,
+    "call_timeout_seconds": 60,
+    "retries": 3,
+    "retry_base_delay_seconds": 0.2
+  },
+
+  "checkout": {
+    "enabled": true,
+    "depth": 1,
+    "git_config": []
+  },
+
+  "notify": {
+    "url_env": "REVIEW_NOTIFY_URL",
+    "timeout_seconds": 10
+  },
+
+  "api_url": "",
+  "token_env": "GITHUB_TOKEN"
+}
